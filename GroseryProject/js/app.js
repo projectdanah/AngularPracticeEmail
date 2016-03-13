@@ -19,20 +19,23 @@ app.config(function($routeProvider){
     })
 });
 
-app.service("GroceryService", function(){
+app.service("GroceryService", function($http){
     
     var groceryService = {};
     
-    groceryService.groceryItems = [
-        {id: 1, completed: true, itemName: 'milk', date: '2014-10-01'},
-        {id: 2, completed: true, itemName: 'cookies', date: '2014-10-02'},
-        {id: 3, completed: true, itemName: 'ice cream', date: '2014-10-03'},
-        {id: 4, completed: true, itemName: 'potatoes', date: '2014-10-04'},
-        {id: 5, completed: true, itemName: 'cereal', date: '2014-10-04'},
-        {id: 6, completed: true, itemName: 'bread', date: '2014-10-04'},
-        {id: 7, completed: true, itemName: 'eggs', date: '2014-10-05'},
-        {id: 8, completed: true, itemName: 'tortillas', date: '2014-10-06'}
-    ];
+    groceryService.groceryItems = [];
+        
+    $http.get("data/server_data.json")
+        .success(function(data){
+            groceryService.groceryItems = data;
+        
+            for(var item in groceryService.groceryItems){
+                groceryService.groceryItems[item].date = new Date(groceryService.groceryItems[item].date);
+            }
+        })
+        .error(function(data, status){
+            alert("Things went wrong!")
+        })
     
     groceryService.findById = function(id){
         for(var item in groceryService.groceryItems){
@@ -65,11 +68,35 @@ app.service("GroceryService", function(){
         console.log("updateItem: " + updateItem);
     };
     
+    groceryService.removeItem = function(entry){
+        
+        var index = groceryService.groceryItems.indexOf(entry);
+        
+        groceryService.groceryItems.splice(index, 1);
+    };
+    
+    groceryService.markCompleted = function(entry){
+        entry.completed = !entry.completed;
+    };
+    
     return groceryService;
 });
 
 app.controller("HomeController", ["$scope", "GroceryService", function($scope, GroceryService){
     $scope.groceryItems = GroceryService.groceryItems;
+    
+    $scope.removeItem = function(entry){
+        GroceryService.removeItem(entry);
+    };
+    
+    $scope.markCompleted = function(entry){
+        GroceryService.markCompleted(entry);
+    };
+    
+    $scope.$watch(function() {return GroceryService.groceryItems;}, function(groceryItems){
+    $scope.groceryItems = groceryItems;
+})
+    
 }]);
 
 app.controller("GroceryListItemController", ["$scope", "$routeParams", "$location", "GroceryService", function($scope, $routeParams, $location, GroceryService){
@@ -86,3 +113,10 @@ app.controller("GroceryListItemController", ["$scope", "$routeParams", "$locatio
     }
     console.log("$routeParams.id: " + $routeParams.id);
 }]);
+
+app.directive("tbGroceryItem", function(){
+    return {
+        restrict: "E",
+        templateUrl: "views/groceryItem.html"
+    }
+});
