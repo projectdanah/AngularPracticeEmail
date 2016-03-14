@@ -62,7 +62,14 @@ app.service("GroceryService", function($http){
             updateItem.itemName = entry.itemName;
             updateItem.date = entry.date;
         }else{
-            entry.id = groceryService.getNewId();
+            $http.post("data/added_item.json", entry)
+                .success(function(data){
+                    entry.id = data.newId;
+                })
+                .error(function(data, status){
+                
+                })
+
             groceryService.groceryItems.push(entry);
         }
         console.log("updateItem: " + updateItem);
